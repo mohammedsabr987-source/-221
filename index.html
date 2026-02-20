@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>نظام كاشير قصر الشام</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+<div class="brand">
+<i class="fas fa-utensils" style="color: var(--primary-glow);"></i> <span>قصر الشام</span>
+</div>
+<nav>
+<div class="nav-item active" onclick="showSection('pos', this)">
+<i class="fas fa-cash-register"></i> <span>نقطة البيع</span>
+</div>
+<div class="nav-item" onclick="showSection('products', this)">
+<i class="fas fa-box-open"></i> <span>المنتجات</span>
+</div>
+<div class="nav-item" onclick="showSection('sales', this)">
+<i class="fas fa-file-invoice-dollar"></i> <span>المبيعات</span>
+</div>
+<div class="nav-item" onclick="showSection('reports', this)">
+<i class="fas fa-chart-pie"></i> <span>التقارير</span>
+</div>
+</nav>
+<div class="data-buttons">
+<button class="data-btn export" onclick="exportData()"><i class="fas fa-download"></i> <span>تصدير البيانات</span></button>
+<button class="data-btn import" onclick="document.getElementById('importFile').click()"><i class="fas fa-upload"></i> <span>استيراد البيانات</span></button>
+<button class="data-btn clear" onclick="clearAllData()"><i class="fas fa-trash"></i> <span>مسح جميع البيانات</span></button>
+<input type="file" id="importFile" style="display:none" accept=".json" onchange="handleImport(this)">
+</div>
+</aside>
+
+<!-- Main Content -->
+<main class="main-content">
+<section id="pos" class="section active">
+
+<!-- Order Controls Header -->
+<div class="order-controls">
+<div class="order-type-toggles">
+<button class="type-btn active" data-type="dine-in" onclick="setOrderType('dine-in', this)">
+<i class="fas fa-chair"></i> صالة
+</button>
+<button class="type-btn" data-type="takeaway" onclick="setOrderType('takeaway', this)">
+<i class="fas fa-shopping-bag"></i> تكاوي
+</button>
+<button class="type-btn" data-type="delivery" onclick="setOrderType('delivery', this)">
+<i class="fas fa-motorcycle"></i> ديليفري
+</button>
+</div>
+<div class="table-input-group" id="tableGroup">
+<i class="fas fa-chair" style="color: var(--text-gray);"></i>
+<label for="tableNum">طاولة:</label>
+<input type="number" id="tableNum" value="1" min="1" max="99">
+</div>
+</div>
+
+<!-- Search & Categories -->
+<div class="search-box">
+<i class="fas fa-search" style="color: var(--text-gray);"></i>
+<input type="text" id="posSearch" placeholder="ابحث عن منتج..." onkeyup="searchProducts(this.value)">
+</div>
+<div class="category-filters">
+<button class="filter-btn active" onclick="filterCategory('all')">الكل</button>
+<button class="filter-btn" onclick="filterCategory('بيتزا')">🍕 بيتزا</button>
+<button class="filter-btn" onclick="filterCategory('كريب')">🌯 كريب</button>
+<button class="filter-btn" onclick="filterCategory('فطائر')">🥟 فطائر</button>
+<button class="filter-btn" onclick="filterCategory('برجر')">🍔 برجر</button>
+<button class="filter-btn" onclick="filterCategory('سوري')">🥙 سوري</button>
+<button class="filter-btn" onclick="filterCategory('حوادشي')">🥩 حوادشي</button>
+<button class="filter-btn" onclick="filterCategory('وافل')">🧇 وافل</button>
+<button class="filter-btn" onclick="filterCategory('اضافات')">🍟 اضافات</button>
+<button class="filter-btn" onclick="filterCategory('مشروبات')">🥤 مشروبات</button>
+</div>
+<div class="pos-grid" id="posGrid"></div>
+</section>
+
+<section id="products" class="section">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+<h2 style="color:#fff; font-weight:800;">إدارة المنتجات</h2>
+<button class="btn btn-primary" onclick="openProductModal()"><i class="fas fa-plus"></i> إضافة منتج</button>
+</div>
+<div class="pos-grid" id="adminGrid"></div>
+</section>
+
+<section id="sales" class="section">
+<h2 style="color:#fff; font-weight:800;">سجل الفواتير</h2>
+<div class="table-container" style="margin-top: 25px;">
+<table>
+<thead><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>النوع</th><th>الإجمالي</th><th>الإجراءات</th></tr></thead>
+<tbody id="salesTableBody"></tbody>
+</table>
+</div>
+</section>
+
+<section id="reports" class="section">
+<h2 style="color:#fff; font-weight:800;">لوحة المعلومات</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; margin-top: 30px;">
+<div style="background: rgba(30,41,59,0.5); padding: 30px; border-radius: 20px; text-align: center;">
+<div style="color: var(--text-gray);">إجمالي المبيعات</div>
+<div style="font-size: 2.2rem; font-weight: 900; color: var(--primary-glow);" id="reportTotalSales">0 ج.م</div>
+</div>
+<div style="background: rgba(30,41,59,0.5); padding: 30px; border-radius: 20px; text-align: center;">
+<div style="color: var(--text-gray);">عدد الفواتير</div>
+<div style="font-size: 2.2rem; font-weight: 900; color: var(--success);" id="reportTotalCount">0</div>
+</div>
+</div>
+</section>
+</main>
+
+<!-- Cart Panel -->
+<div class="cart-panel">
+<div class="cart-header">
+<div style="display: flex; align-items: center; gap: 10px;">
+<h3><i class="fas fa-shopping-bag" style="color: var(--primary-glow);"></i> الطلب الحالي</h3>
+<span id="cartCount">0</span>
+</div>
+<button onclick="clearCart()" style="background: rgba(239, 68, 68, 0.1); border: none; color: #ef4444; padding: 8px; border-radius: 10px; cursor: pointer;"><i class="fas fa-trash-alt"></i></button>
+</div>
+<div class="cart-items" id="cartList"></div>
+<div class="cart-footer">
+
+<!-- Customer Details (Delivery Only) -->
+<div id="customerDetails" class="customer-details">
+<div class="customer-grid">
+<div class="form-group">
+<label>اسم العميل</label>
+<input type="text" id="custName" placeholder="الاسم">
+</div>
+<div class="form-group">
+<label>رقم الهاتف</label>
+<input type="tel" id="custPhone" placeholder="01xxxxxxxxx">
+</div>
+</div>
+<div class="form-group" style="margin-top:12px;">
+<label>عنوان التوصيل</label>
+<input type="text" id="custAddress" placeholder="العنوان بالتفصيل">
+</div>
+</div>
+
+<div class="discount-row">
+<span>الخصم (%):</span>
+<input type="number" id="discountInput" value="0" min="0" max="100" onchange="updateCartUI()">
+<span style="cursor:pointer;" onclick="document.getElementById('discountInput').value=0; updateCartUI()">✕</span>
+</div>
+<div class="total-row">
+<span>الصافي:</span>
+<span class="total-value" id="cartTotal">0.00 ج.م</span>
+</div>
+<div class="action-btns">
+<button class="btn btn-secondary" onclick="openCheckoutModal()"><i class="fas fa-wallet"></i> دفع</button>
+<button class="btn btn-primary" onclick="directCheckout()"><i class="fas fa-print"></i> طباعة سريعة</button>
+</div>
+</div>
+</div>
+
+<!-- Product Modal -->
+<div id="productModal" class="modal">
+<div class="modal-box">
+<h3 style="margin-bottom: 25px; color: #fff; font-weight: 800;" id="modalTitle">منتج جديد</h3>
+<input type="hidden" id="pIndex">
+<div class="form-group"><label>اسم المنتج</label><input type="text" id="pName"></div>
+<div class="form-group"><label>السعر</label><input type="number" id="pPrice"></div>
+<div class="form-group"><label>التصنيف</label>
+<select id="pCategory">
+<option value="بيتزا">بيتزا</option><option value="كريب">كريب</option><option value="فطائر">فطائر</option>
+<option value="برجر">برجر</option><option value="سوري">سوري</option><option value="حوادشي">حوادشي</option>
+<option value="وافل">وافل</option><option value="مشروبات">مشروبات</option><option value="اضافات">اضافات</option>
+</select>
+</div>
+<div style="display: flex; gap: 15px; margin-top: 25px;">
+<button class="btn btn-primary" style="flex:1;" onclick="saveProduct()">حفظ</button>
+<button class="btn btn-secondary" style="flex:1;" onclick="closeModal('productModal')">إلغاء</button>
+</div>
+</div>
+</div>
+
+<!-- Checkout Modal -->
+<div id="checkoutModal" class="modal">
+<div class="modal-box">
+<h3 style="margin-bottom: 20px; color: #fff; font-weight: 800; text-align: center;">
+<i class="fas fa-credit-card" style="color:var(--primary-glow);"></i> إتمام الدفع
+</h3>
+<label style="color:var(--text-gray); font-weight:600; margin-bottom:10px; display:block;">طريقة الدفع:</label>
+<div class="checkout-options">
+<div class="payment-opt selected" onclick="selectPayment('cash', this)">💵 كاش</div>
+<div class="payment-opt" onclick="selectPayment('card', this)">💳 فيزا</div>
+<div class="payment-opt" onclick="selectPayment('wallet', this)">📱 محفظة</div>
+</div>
+<div style="display:flex; justify-content:space-between; margin: 20px 0; color:#fff; font-size:1.3rem; font-weight:bold;">
+<span>المبلغ المطلوب:</span>
+<span id="modalTotal" style="color:var(--success);">0.00 ج.م</span>
+</div>
+<button class="btn btn-primary" style="width:100%; padding: 16px; font-size:1.1rem;" onclick="confirmCheckout()">
+<i class="fas fa-check-circle"></i> تأكيد وطباعة الفاتورة
+</button>
+</div>
+</div>
+
+<!-- Print Preview Modal -->
+<div id="printPreviewModal" class="modal">
+<div class="print-wrapper">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 15px; background: #fff; border-radius: 12px;">
+<h3 style="color: #000; margin: 0;"><i class="fas fa-print"></i> معاينة الإيصال</h3>
+<button onclick="closeModal('printPreviewModal')" style="background: #eee; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer;">✕</button>
+</div>
+<div class="print-area-wrapper">
+<div id="printPreviewContent" class="receipt-thermal"></div>
+</div>
+<div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+<button class="btn btn-secondary" onclick="closeModal('printPreviewModal')">إغلاق</button>
+<button class="btn btn-primary" onclick="confirmPrint()"><i class="fas fa-check"></i> طباعة</button>
+</div>
+</div>
+</div>
+<div id="printArea"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
